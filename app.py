@@ -4,6 +4,7 @@ from datetime import date
 import requests
 import sqlite3
 import os
+from database import get_stored_data
 
 # TO MUSI BYĆ PIERWSZA KOMENDA STREAMLIT
 st.set_page_config(page_title="Rejestr BIO", layout="wide")
@@ -107,8 +108,6 @@ def load_database():
     except Exception as e:
         st.error(f"❌ Błąd podczas ładowania bazy: {e}")
         return None
-
-
 def check_database_structure():
     """Sprawdza strukturę bazy danych"""
     try:
@@ -177,8 +176,99 @@ def diagnostyka():
                     st.write(f"   - {date_row[0]}")
         else:
             st.error("❌ Nie udało się załadować bazy danych!")
+
+if False:
+    '''
+        NA POCZĄTKU APLIKACJI, po st.title():
+        tab1, tab2, tab3 = st.tabs(["📊 Dane główne", "🌦️ Pogoda", "📈 Statystyki"])
+        
+        with tab1:
+            # Tutaj przenieś główne sekcje (Biometryka, Dieta, Odczucia)
+            
+        with tab2:
+            # Tutaj tylko dane pogodowe
+            
+        with tab3:
+            # Ewentualne statystyki
+    '''
 db_path = load_database()
 tables, table_info, sample_data, available_dates = check_database_structure()
+data = date.today()
+city, lat,lon, selected_date, hgh, hgl, sen, stres, dieta_values1, dieta_values2, bol, godzina_bolu, samopoczucie, uwagi, data_str = (
+    MIEJSCOWOSC,LAT,LON,date.today(),0,0,0,1,(0,0,0,0,0),(0,0,0,0,0),0,'',10,'',date.today().strftime('%Y-%m-%d'))
+
+def entry_from_base(data):
+    data_str = data.today().strftime('%Y-%m-%d')
+    row_bio_diet = get_stored_data(data_str)
+
+    columns = ("date","max_temp","min_temp","max_pressure","min_pressure","avg_wind_speed","lat","lon","delta_temp","delta_pressure",
+                "sen","stres","HgL","HgH","bol","samopoczucie","slodycze","nabial","mieso_biale",
+                "mieso_czerwone","alkohol","kawa","przetworzone","warzywa_owoce","gluten","orzechy","uwagi","miejscowosc","godzina_bolu")
+    # columns i row_diet są już zdefiniowane
+    data_dict = dict(zip(columns, row_bio_diet))
+
+    # GŁÓWNA APLIKACJA
+    st.title("📊 Rejestr BIO - dane biometryczne, pogodowe i dietetyczne")
+
+    tab1, tab2, tab3, tab4 = st.tabs(["🌍 Lokalizacja", "💓 Biometryka", "🍎 Dieta","🧠 Odczucia"])
+
+    # --- Sekcja Lokalizacja ---
+    with tab1:
+        st.header("🌍 Lokalizacja")
+        col1, col2, col3, col4 = st.columns(4)
+        with col1:
+            city = st.text_input("Miejscowość", f"{data_dict["miejscowosc"]}")
+        with col2:
+            lat = st.number_input(f"Szerokość geogr. (lat)", value=data_dict["lat"], format="%.8f")
+        with col3:
+            lon = st.number_input("Długość geogr. (lon)", value=data_dict["lon"], format="%.8f")
+        with col4:
+            selected_date = st.date_input("Data", value=data_dict["date"])
+    with tab2:
+        # --- Sekcja Biometryka ---
+        st.header("💓 Biometryka")
+        col1, col2, col3, col4 = st.columns(4)
+        with col1:
+            hgh = st.number_input("HgH", min_value=0, max_value=220, value=data_dict["HgH"])
+        with col2:
+            hgl = st.number_input("HgL", min_value=0, max_value=180, value=data_dict["HgL"])
+        with col3:
+            sen = st.number_input("Sen (h)", min_value=0, max_value=24, value=int(data_dict["sen"]))
+        with col4:
+            stres = st.slider("Stres (1-10)", 1, 10, data_dict["stres"])
+    with tab3:
+        st.header("🍎 Dieta")
+        cols1 = st.columns(5)
+        dieta_labels1 = ["Mięso białe (%)", "Mięso czerwone (%)", "Nabiał (%)", "Słodycze (g)", "Alkohol (ml)"]
+        dieta_val1 = [data_dict["mieso_biale"],data_dict["mieso_czerwone"],data_dict["nabial"],data_dict["slodycze"],data_dict["alkohol"]]
+        dieta_values1 = [cols1[i].number_input(dieta_labels1[i], min_value=0, max_value=100, value=dieta_val1[i]) for i in range(5)]
+
+        cols2 = st.columns(5)
+        dieta_labels2 = ["Warzywa i owoce (%)", "Przetworzone (%)", "Gluten (%)", "Orzechy (garść)", "Kawa (szt.)"]
+        dieta_val2 = [data_dict["warzywa_owoce"], data_dict["przetworzone"], data_dict["gluten"], data_dict["orzechy"],
+                      data_dict["kawa"]]
+
+        dieta_values2 = [cols2[i].number_input(dieta_labels2[i], min_value=0, max_value=100, value=dieta_val2[i]) for i in range(5)]
+
+    with tab4:
+        # --- Sekcja Odczucia ---
+        st.header("🧠 Odczucia")
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            bol = st.slider("Ból (1-10)", 0, 10, data_dict["bol"])
+        with col2:
+            godzina_bolu = st.number_input("Godzina bólu (0-23)", min_value=0, max_value=23, value=data_dict["godzina_bolu"])
+        with col3:
+            samopoczucie = st.slider("Samopoczucie (1-10)", 1, 10, data_dict["samopoczucie"])
+
+        uwagi = st.text_area("📝 Uwagi", data_dict["uwagi"])
+        data_str = date.today().strftime('%Y-%m-%d')
+
+    return city, lat,lon, selected_date, hgh, hgl, sen, stres, dieta_values1, dieta_values2, bol, godzina_bolu, samopoczucie, uwagi, data_str
+
+entry_from_base(data)
+if False:
+    """
 # GŁÓWNA APLIKACJA
 st.title("📊 Rejestr BIO - dane biometryczne, pogodowe i dietetyczne")
 
@@ -194,6 +284,7 @@ with col3:
 with col4:
     selected_date = st.date_input("Data", date.today())
 
+
 # --- Sekcja Biometryka ---
 st.header("💓 Biometryka")
 col1, col2, col3, col4 = st.columns(4)
@@ -206,7 +297,7 @@ with col3:
 with col4:
     stres = st.slider("Stres (1-10)", 1, 10, 5)
 
-db_path = load_database()
+# db_path = load_database()
 # --- Sekcja Dieta ---
 st.header("🍎 Dieta")
 cols = st.columns(5)
@@ -228,6 +319,8 @@ with col3:
     samopoczucie = st.slider("Samopoczucie (1-10)", 1, 10, 5)
 
 uwagi = st.text_area("📝 Uwagi", "")
+data_str =  date.today().strftime('%Y-%m-%d')
+"""
 
 # --- Przyciski ---
 col1, col2 = st.columns(2)
