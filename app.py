@@ -5,6 +5,9 @@ import requests
 import sqlite3
 import os
 from database import get_stored_data
+import predict_headeche
+from datetime import timedelta
+import matplotlib.pyplot as plt
 
 # TO MUSI BYĆ PIERWSZA KOMENDA STREAMLIT
 st.set_page_config(page_title="Rejestr BIO", layout="wide")
@@ -177,6 +180,68 @@ def diagnostyka():
         else:
             st.error("❌ Nie udało się załadować bazy danych!")
 
+
+def display_prediction_results(prediction_date):
+    """Wyświetla wyniki predykcji w Streamlit"""
+
+    st.header("🤖 Predykcja bólu głowy")
+
+    with st.spinner("Trwa obliczanie predykcji..."):
+        results = your_model_module.przewidywanie(
+            data_pred=prediction_date,
+            db_path="weather_data.db",
+            print_importances=False,
+            print_predict=True,
+            print_krzywe_uczenia=False,
+            print_shap=False,
+            print_macierz_korelacji=False
+        )
+
+    if results and results["predictions"] is not None:
+        # Wyświetl podstawowe informacje
+        st.success(f"✅ Predykcja wykonana pomyślnie!")
+        st.write(f"**Model:** {results['best_model_name']}")
+        st.write(f"**Jakość modelu (R²):** {results['best_r2']:.4f}")
+        st.write(f"**Błąd predykcji (MAE):** {results['best_mae_pain']:.4f}")
+
+        # Tabela z predykcjami
+        st.subheader("📊 Przewidywany poziom bólu w godzinach")
+        st.dataframe(results["predictions"], use_container_width=True)
+
+        # Wykres
+        st.subheader("📈 Wykres predykcji")
+        fig = create_prediction_plot(results["predictions"], prediction_date,
+                                     results["best_r2"], results["best_mae_pain"])
+        st.pyplot(fig)
+
+    else:
+        st.error("❌ Nie udało się wykonać predykcji dla podanej daty")
+
+
+def create_prediction_plot(predictions_df, date_str, r2_score, mae_score):
+    """Tworzy wykres predykcji dla Streamlit"""
+    import matplotlib.pyplot as plt
+
+    fig, ax = plt.subplots(figsize=(10, 6))
+    ax.plot(predictions_df["hour"], predictions_df["predicted_pain"],
+            marker="o", linestyle="-", label="Przewidywany ból")
+
+    # Linie błędu
+    ax.fill_between(predictions_df["hour"],
+                    predictions_df["predicted_pain"] - mae_score,
+                    predictions_df["predicted_pain"] + mae_score,
+                    alpha=0.2, color="gray", label=f"Margines błędu (MAE: {mae_score:.4f})")
+
+    ax.set_title(f"Przewidywany poziom bólu głowy na {date_str}\n(R²: {r2_score:.4f})")
+    ax.set_xlabel("Godzina")
+    ax.set_ylabel("Przewidywany poziom bólu")
+    ax.set_xticks(range(0, 24))
+    ax.grid(True)
+    ax.set_ylim(bottom=0)
+    ax.legend()
+
+    return fig
+
 db_path = load_database()
 tables, table_info, sample_data, available_dates = check_database_structure()
 data = date.today()
@@ -199,8 +264,10 @@ def entry_from_base(data):
     # GŁÓWNA APLIKACJA
     st.title("📊 Rejestr BIO")
 
-    tab1, tab2, tab3, tab4, tab5 = st.tabs(["🌍 Lokalizacja", "💓 Biometryka", "🍎 Dieta","🧠 Odczucia","💾 Zapisz"])
-
+    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+        "🌍 Lokalizacja", "💓 Biometryka", "🍎 Dieta", "🧠 Odczucia",
+        "💾 Zapis", "🤖 Predykcja"  # ← NOWA ZAKŁADKA
+    ])
     # --- Sekcja Lokalizacja ---
     with tab1:
         st.header("🌍 Lokalizacja")
@@ -266,6 +333,33 @@ def entry_from_base(data):
 
         # Zapisz do session_state
         st.session_state.selected_date = selected_date
+    with tab6:
+        st.header("🤖 Predykcja bólu głowy")
+
+        # Data do predykcji
+        pred_date = st.date_input(
+            "Data predykcji",
+            value=date.today() + timedelta(days=1),
+            key="prediction_date"
+        )
+
+        # Przycisk do uruchomienia predykcji
+        if st.button("🎯 Wykonaj predykcję", type="primary"):
+            display_prediction_results(str(pred_date))
+
+        # Opcjonalnie: informacje o modelu
+        with st.expander("ℹ️ Informacje o modelu"):
+            st.write("""
+            Model wykorzystuje uczenie maszynowe do przewidywania poziomu bólu głowy 
+            na podstawie danych pogodowych, biometrycznych i dietetycznych.
+
+            **Wykorzystane algorytmy:**
+            - Random Forest
+            - Gradient Boosting  
+            - XGBoost
+            - LightGBM
+            """)
+
     return city, lat,lon, hgh, hgl, sen, stres, dieta_values1, dieta_values2, bol, godzina_bolu, samopoczucie, uwagi, data_str
 
 entry_from_base(data)

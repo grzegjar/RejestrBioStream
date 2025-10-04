@@ -742,83 +742,45 @@ def plot_korelacja_z_bolem (X,Y):
     plt.tight_layout()
     plt.show()
 
-def przewidywanie(data_pred,
-                    print_importances = False,
-                    print_predict = True,
-                    print_krzywe_uczenia = False,
-                    print_shap = False,
-                    print_macierz_korelacji = False):
 
+def przewidywanie(data_pred, db_path="weather_data.db",
+                  print_importances=False,
+                  print_predict=True,
+                  print_krzywe_uczenia=False,
+                  print_shap=False,
+                  print_macierz_korelacji=False):
     warnings.filterwarnings("ignore", category=UserWarning)
-    #prediction_date_input = "2025-09-29"  # Domyślna data predykcji
-    DB_PATH = "weather_data.db"
-    print_importances = print_importances
-    print_predict = print_predict
-    print_krzywe_uczenia = print_krzywe_uczenia
-    print_shap = print_shap
-    print_macierz_korelacji = print_macierz_korelacji
 
-    if not data_pred is None:
-        print (data_pred)
+    if data_pred is not None:
         prediction_date_input = data_pred
 
         # Krok 1: Przygotowanie danych
-        X, Y, features = prepare_data(DB_PATH)
+        X, Y, features = prepare_data(db_path)
 
         if X is not None and Y is not None:
             # Krok 2: Trenowanie i ocena modeli
-            trained_models, best_model, best_r2, best_mae_pain, data_models = train_and_evaluate_models(X, Y)
+            trained_models, best_model_name, best_r2, best_mae_pain, data_models = train_and_evaluate_models(X, Y)
 
-            # Krok 3: Wybór najlepszego modelu (np. na podstawie najniższego MAE)
-            best_model = trained_models.get("Random Forest")
+            # Krok 3: Wybór najlepszego modelu
+            best_model = trained_models.get(best_model_name)
 
             if best_model:
-                # Krok 4: Predykcja dla określonej daty (np. jutro)
-                if print_importances:
-                    show_feature_importances(best_model, features, top_n=15)
+                # Krok 4: Predykcja dla określonej daty
+                predictions_output = predict_for_date(best_model, db_path, features, prediction_date_input)
 
-                if print_predict:
-                    predictions_output = predict_for_date(best_model, DB_PATH, features, prediction_date_input)
-                    if predictions_output is not None:
-                        # print(f"\n--- Prognoza bólu głowy na {prediction_date_input} ---")
-                        # print(predictions_output)
-                        plot_pain_prediction(predictions_output, prediction_date_input, best_r2, best_mae_pain, best_model)
+                # ZWRÓĆ WYNIKI zamiast wyświetlać
+                return {
+                    "predictions": predictions_output,
+                    "best_model_name": best_model_name,
+                    "best_r2": best_r2,
+                    "best_mae_pain": best_mae_pain,
+                    "features": features,
+                    "trained_models": trained_models,
+                    "data_models": data_models,
+                    "X": X,
+                    "Y": Y
+                }
 
-                if print_krzywe_uczenia:
-                    print('Krzywe uczenia')
-                    plot_learning_curves_all(data_models, cv=5)
-
-                if print_shap:
-                    print('SHAP')
-                    data_models_list = data_models.to_dict(orient='records')
-                    X_train = next(res["X_train"] for res in data_models_list if res["model_name"] == "Random Forest")
-                    plot_shap_summary(best_model, X_train, model_name="Forest Regres")
-                    # Przykład predykcji dla innej daty (np. 2025-09-10)
-                    # prediction_date_input_past = "2025-09-10"
-                    # predictions_output_past = predict_for_date(best_model, DB_PATH, features, pred
-
-                if print_macierz_korelacji:
-                    print('Korelacja')
-                    data_models_list = data_models.to_dict(orient='records')
-                    X_train = next(res["X_train"] for res in data_models_list if res["model_name"] == "Random Forest")
-
-                    # policz korelacje
-                    corr_matrix = X_train[features].corr()
-
-                    # wybierz tylko wartości większe niż 0.6 (z wyłączeniem diagonalnych == 1.0)
-                    high_corr = corr_matrix[(corr_matrix.abs() > 0.6) & (corr_matrix.abs() < 1.0)]
-
-                    # „stopnij” macierz do listy par (feature1, feature2, korelacja)
-                    high_corr_pairs = (
-                        high_corr.stack()  # spłaszczenie macierzy
-                        .reset_index()
-                        .rename(columns={0: "correlation", "level_0": "feature1", "level_1": "feature2"})
-                    )
-
-                    print(high_corr_pairs)
-
-                    # Wykres
-                    plot_corelation(X_train, features)
-                    plot_korelacja_z_bolem(X, Y)
+    return None
 
 
