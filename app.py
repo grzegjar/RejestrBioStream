@@ -1,48 +1,72 @@
 import streamlit as st
 import pandas as pd
-import sqlite3
-import matplotlib.pyplot as plt
-from sklearn.ensemble import RandomForestRegressor
-import pickle
-import requests
-from io import BytesIO
+from datetime import date
+from your_module import get_weather_data_by_date  # <- Twój moduł do pobierania danych
 
+st.set_page_config(page_title="Rejestr BIO", layout="wide")
 
-# --- Pobierz bazę danych z Dysku Google ---
-GDRIVE_FILE_ID = "1Y5mfNI-KvJ7GdhXlQcevhvP_JxhS1Qkr"
-url = f"https://drive.google.com/uc?id={GDRIVE_FILE_ID}"
+st.title("📊 Rejestr BIO - dane biometryczne, pogodowe i dietetyczne")
 
-@st.cache_data
-def load_database():
-    r = requests.get(url)
-    open("weather_data.db", "wb").write(r.content)
-    return "weather_data.db"
+# --- Sekcja Lokalizacja ---
+st.header("🌍 Lokalizacja")
+col1, col2, col3, col4 = st.columns(4)
+with col1:
+    city = st.text_input("Miejscowość", "Warszawa")
+with col2:
+    lat = st.number_input("Szerokość geogr. (lat)", value=52.23)
+with col3:
+    lon = st.number_input("Długość geogr. (lon)", value=21.01)
+with col4:
+    selected_date = st.date_input("Data", date.today())
 
-db_path = load_database()
-conn = sqlite3.connect(db_path)
+# --- Sekcja Biometryka ---
+st.header("💓 Biometryka")
+col1, col2, col3, col4 = st.columns(4)
+with col1:
+    hgh = st.number_input("HgH", min_value=0, max_value=200, value=120)
+with col2:
+    hgl = st.number_input("HgL", min_value=0, max_value=200, value=80)
+with col3:
+    sen = st.number_input("Sen (h)", min_value=0.0, max_value=24.0, value=7.0)
+with col4:
+    stres = st.slider("Stres (1-10)", 1, 10, 5)
 
-# --- Interfejs Streamlit ---
-st.title("Aplikacja predykcji danych biometrycznych")
+# --- Sekcja Dieta ---
+st.header("🍎 Dieta")
+cols = st.columns(5)
+dieta_labels = ["Mięso białe (%)", "Mięso czerwone (%)", "Nabiał (%)", "Słodycze (g)", "Alkohol (ml)"]
+dieta_values = [cols[i].number_input(dieta_labels[i], min_value=0, max_value=100, value=0) for i in range(5)]
 
-# Formularz wejściowy
-with st.form("form_input"):
-    temp = st.number_input("Temperatura", -20.0, 40.0, 20.0)
-    pressure = st.number_input("Ciśnienie", 950.0, 1050.0, 1013.0)
-    uvi = st.number_input("UVI", 0.0, 11.0, 2.0)
-    submitted = st.form_submit_button("Oblicz predykcję")
+cols2 = st.columns(5)
+dieta_labels2 = ["Warzywa i owoce (%)", "Przetworzone (%)", "Gluten (%)", "Orzechy (garść)", "Kawa (szt.)"]
+dieta_values2 = [cols2[i].number_input(dieta_labels2[i], min_value=0, max_value=100, value=0) for i in range(5)]
 
-# --- Predykcja ---
-if submitted:
-    model = pickle.load(open("model.pkl", "rb"))
-    X_new = pd.DataFrame([[temp, pressure, uvi]], columns=["temp", "pressure", "uvi"])
-    y_pred = model.predict(X_new)[0]
-    st.success(f"Przewidywany poziom bólu: {y_pred:.2f}")
+# --- Sekcja Odczucia ---
+st.header("🧠 Odczucia")
+col1, col2, col3 = st.columns(3)
+with col1:
+    bol = st.slider("Ból (1-10)", 0, 10, 0)
+with col2:
+    godzina_bolu = st.number_input("Godzina bólu (0-23)", min_value=0, max_value=23, value=0)
+with col3:
+    samopoczucie = st.slider("Samopoczucie (1-10)", 1, 10, 5)
 
-# --- Wykres z bazy ---
-df = pd.read_sql_query("SELECT date, bol FROM weather", conn)
-st.dataframe(df.tail(10))
+uwagi = st.text_area("📝 Uwagi", "")
 
-fig, ax = plt.subplots()
-ax.plot(df["date"], df["bol"])
-ax.set_title("Ostatnie wyniki bólu")
-st.pyplot(fig)
+# --- Przyciski ---
+col1, col2 = st.columns(2)
+with col1:
+    if st.button("💾 Zapisz dane"):
+        st.success("Dane zapisane (przykładowo – tu dodamy zapis do bazy SQLite / Google Drive)")
+with col2:
+    if st.button("🧹 Wyczyść dane"):
+        st.info("Dane wyczyszczone (tymczasowo – jeszcze bez logiki)")
+
+# --- Sekcja Tabeli pogodowej ---
+st.header("🌦️ Dane pogodowe")
+columns, rows = get_weather_data_by_date(selected_date)
+if rows:
+    df = pd.DataFrame(rows, columns=columns)
+    st.dataframe(df, use_container_width=True)
+else:
+    st.warning("Brak danych pogodowych dla wybranej daty.")
