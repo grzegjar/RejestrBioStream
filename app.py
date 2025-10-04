@@ -20,26 +20,27 @@ def load_database():
     try:
         db_filename = "weather_data.db"
 
-        # Sprawdź nagłówek Content-Length z Google Drive
-        st.info("🔍 Sprawdzanie aktualności bazy danych...")
-        head_response = requests.head(url)
+        # Sprawdź rozmiar pliku na Google Drive używając GET z ograniczeniem pobierania
+        #st.info("🔍 Sprawdzanie aktualności bazy danych...")
 
-        if head_response.status_code != 200:
-            st.error(f"❌ Błąd sprawdzania pliku: Status {head_response.status_code}")
-            return None
+        # Pobierz tylko nagłówki aby sprawdzić rozmiar
+        with requests.get(url, stream=True) as response:
+            if response.status_code != 200:
+                st.error(f"❌ Błąd sprawdzania pliku: Status {response.status_code}")
+                return None
 
-        remote_size = int(head_response.headers.get('content-length', 0))
-        st.write(f"📦 Rozmiar pliku na Google Drive: {remote_size} bajtów")
+            remote_size = int(response.headers.get('content-length', 0))
+           # st.write(f"📦 Rozmiar pliku na Google Drive: {remote_size} bajtów")
 
         # Sprawdź czy plik lokalny istnieje i ma ten sam rozmiar
         local_exists = os.path.exists(db_filename)
 
         if local_exists:
             local_size = os.path.getsize(db_filename)
-            st.write(f"💾 Rozmiar pliku lokalnego: {local_size} bajtów")
+            #st.write(f"💾 Rozmiar pliku lokalnego: {local_size} bajtów")
 
             if local_size == remote_size and remote_size > 0:
-                st.success("✅ Używam istniejącej bazy danych (pliki identyczne)")
+             #   st.success("✅ Używam istniejącej bazy danych (pliki identyczne)")
 
                 # Sprawdź czy baza jest poprawna
                 try:
@@ -50,7 +51,7 @@ def load_database():
                     conn.close()
 
                     if tables:
-                        st.success(f"✅ Baza danych poprawna! Tabele: {tables}")
+                        #st.success(f"✅ Baza danych poprawna! Tabele: {tables}")
                         return db_filename
                     else:
                         st.warning("⚠️ Baza istnieje ale nie zawiera tabel - pobieram ponownie")
@@ -61,7 +62,7 @@ def load_database():
         else:
             st.info("📥 Brak lokalnej bazy - pobieram z Google Drive")
 
-        # Pobierz plik jeśli potrzebny
+        # Jeśli potrzebujemy pobrać, kontynuujemy z tym samym połączeniem
         st.info("📥 Pobieranie bazy danych z Google Drive...")
         r = requests.get(url)
 
