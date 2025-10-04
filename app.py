@@ -16,8 +16,50 @@ url = f"https://drive.google.com/uc?id={GDRIVE_FILE_ID}"
 
 
 def load_database():
-    """Pobiera bazę danych z Google Drive i sprawdza jej poprawność"""
+    """Pobiera bazę danych z Google Drive jeśli nie istnieje lub się zmieniła"""
     try:
+        db_filename = "weather_data.db"
+
+        # Sprawdź nagłówek Content-Length z Google Drive
+        st.info("🔍 Sprawdzanie aktualności bazy danych...")
+        head_response = requests.head(url)
+
+        if head_response.status_code != 200:
+            st.error(f"❌ Błąd sprawdzania pliku: Status {head_response.status_code}")
+            return None
+
+        remote_size = int(head_response.headers.get('content-length', 0))
+        st.write(f"📦 Rozmiar pliku na Google Drive: {remote_size} bajtów")
+
+        # Sprawdź czy plik lokalny istnieje i ma ten sam rozmiar
+        if os.path.exists(db_filename):
+            local_size = os.path.getsize(db_filename)
+            st.write(f"💾 Rozmiar pliku lokalnego: {local_size} bajtów")
+
+            if local_size == remote_size and remote_size > 0:
+                st.success("✅ Używam istniejącej bazy danych (pliki identyczne)")
+
+                # Sprawdź czy baza jest poprawna
+                try:
+                    conn = sqlite3.connect(db_filename)
+                    cursor = conn.cursor()
+                    cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
+                    tables = cursor.fetchall()
+                    conn.close()
+
+                    if tables:
+                        st.success(f"✅ Baza danych poprawna! Tabele: {tables}")
+                        return db_filename
+                    else:
+                        st.warning("⚠️ Baza istnieje ale nie zawiera tabel - pobieram ponownie")
+                except sqlite3.Error:
+                    st.warning("⚠️ Baza istnieje ale jest uszkodzona - pobieram ponownie")
+            else:
+                st.info("🔄 Plik się zmienił lub rozmiary różne - pobieram nową wersję")
+        else:
+            st.info("📥 Brak lokalnej bazy - pobieram z Google Drive")
+
+        # Pobierz plik jeśli potrzebny
         st.info("📥 Pobieranie bazy danych z Google Drive...")
         r = requests.get(url)
 
@@ -25,33 +67,32 @@ def load_database():
             st.error(f"❌ Błąd pobierania: Status {r.status_code}")
             return None
 
-        # Sprawdź rozmiar pliku
-        file_size = len(r.content)
-        #st.write(f"📦 Rozmiar pobranego pliku: {file_size} bajtów")
+        downloaded_size = len(r.content)
+        st.write(f"📦 Rozmiar pobranego pliku: {downloaded_size} bajtów")
 
-        if file_size == 0:
+        if downloaded_size == 0:
             st.error("❌ Pobrano pusty plik!")
             return None
 
         # Zapisz plik
-        with open("weather_data.db", "wb") as f:
+        with open(db_filename, "wb") as f:
             f.write(r.content)
 
         # Sprawdź czy plik został zapisany
-        if os.path.exists("weather_data.db"):
-            file_info = os.stat("weather_data.db")
-            #st.write(f"💾 Zapisany plik: {file_info.st_size} bajtów")
+        if os.path.exists(db_filename):
+            final_size = os.path.getsize(db_filename)
+            st.write(f"💾 Zapisany plik: {final_size} bajtów")
 
             # Sprawdź czy to prawidłowa baza SQLite
             try:
-                conn = sqlite3.connect("weather_data.db")
+                conn = sqlite3.connect(db_filename)
                 cursor = conn.cursor()
                 cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
                 tables = cursor.fetchall()
                 conn.close()
-                # st.success(f"✅ Baza danych załadowana!") # Tabele: {tables}")
-                # st.success(f"✅ Baza danych załadowana! Tabele: {tables}")
-                return "weather_data.db"
+
+                st.success(f"✅ Baza danych załadowana! Tabele: {tables}")
+                return db_filename
 
             except sqlite3.Error as e:
                 st.error(f"❌ Błąd SQLite: {e}")
