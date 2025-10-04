@@ -32,7 +32,9 @@ def load_database():
         st.write(f"📦 Rozmiar pliku na Google Drive: {remote_size} bajtów")
 
         # Sprawdź czy plik lokalny istnieje i ma ten sam rozmiar
-        if os.path.exists(db_filename):
+        local_exists = os.path.exists(db_filename)
+
+        if local_exists:
             local_size = os.path.getsize(db_filename)
             st.write(f"💾 Rozmiar pliku lokalnego: {local_size} bajtów")
 
