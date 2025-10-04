@@ -197,9 +197,7 @@ data = date.today()
 city, lat,lon, selected_date, hgh, hgl, sen, stres, dieta_values1, dieta_values2, bol, godzina_bolu, samopoczucie, uwagi, data_str = (
     MIEJSCOWOSC,LAT,LON,date.today(),0,0,0,1,(0,0,0,0,0),(0,0,0,0,0),0,'',10,'',date.today().strftime('%Y-%m-%d'))
 
-tab1, tab2, tab3, tab4, tab5 = st.tabs(["🌍 Lokalizacja", "💓 Biometryka", "🍎 Dieta","🧠 Odczucia","💾 Zapis"])
-
-def entry_from_base(data,tab1, tab2, tab3, tab4):
+def entry_from_base(data):
     data_str = data.today().strftime('%Y-%m-%d')
     row_bio_diet = get_stored_data(data_str)
 
@@ -212,6 +210,7 @@ def entry_from_base(data,tab1, tab2, tab3, tab4):
     # GŁÓWNA APLIKACJA
     st.title("📊 Rejestr BIO")
 
+    tab1, tab2, tab3, tab4 = st.tabs(["🌍 Lokalizacja", "💓 Biometryka", "🍎 Dieta","🧠 Odczucia"])
 
     # --- Sekcja Lokalizacja ---
     with tab1:
@@ -324,14 +323,13 @@ data_str =  date.today().strftime('%Y-%m-%d')
 """
 
 # --- Przyciski ---
-with tab5:
-    col1, col2 = st.columns(2)
-    with col1:
-        if st.button("💾 Zapisz dane"):
-            st.success("Dane zapisane (przykładowo – tu dodamy zapis do bazy SQLite / Google Drive)")
-    with col2:
-        if st.button("🧹 Wyczyść dane"):
-            st.info("Dane wyczyszczone (tymczasowo – jeszcze bez logiki)")
+col1, col2 = st.columns(2)
+with col1:
+    if st.button("💾 Zapisz dane"):
+        st.success("Dane zapisane (przykładowo – tu dodamy zapis do bazy SQLite / Google Drive)")
+with col2:
+    if st.button("🧹 Wyczyść dane"):
+        st.info("Dane wyczyszczone (tymczasowo – jeszcze bez logiki)")
 
 # --- Sekcja Tabeli pogodowej ---
 st.header("🌦️ Dane pogodowe")
