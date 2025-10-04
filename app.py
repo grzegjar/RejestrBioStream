@@ -7,6 +7,7 @@ import pickle
 import requests
 from io import BytesIO
 
+
 # --- Pobierz bazę danych z Dysku Google ---
 GDRIVE_FILE_ID = "1Y5mfNI-KvJ7GdhXlQcevhvP_JxhS1Qkr"
 url = f"https://drive.google.com/uc?id={GDRIVE_FILE_ID}"
