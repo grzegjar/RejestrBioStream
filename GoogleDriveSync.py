@@ -1,7 +1,6 @@
 import os
 import json
 from datetime import datetime
-from tkinter import simpledialog, messagebox
 import webbrowser
 import requests
 import base64
