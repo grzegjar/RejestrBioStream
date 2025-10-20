@@ -3,4 +3,5 @@ LAT = 53.1266446126409
 LON = 17.969625198468478
 MIEJSCOWOSC = "Bydgoszcz"
 DB_FILE = "weather_data.db"
+DB_FILE2 = "weather_data.db"
 GDRIVE_FILE_ID = "1sL7SftmLEuKLhj6skwSbPjTYyQy0Wg6Z"

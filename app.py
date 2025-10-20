@@ -59,7 +59,7 @@ def initialize_database_once():
             print('======= Baza danych gotowa do użycia ===============')
             st.session_state.database_initialized = True
         else:
-            print('❌ Problem z bazą danych - używam lokalnej wersji jeśli istnieje')
+            print('❌ Problem z bazą danych - używam lokalnej wersji jeśli istnieje ')
 
     return st.session_state.database_initialized
 

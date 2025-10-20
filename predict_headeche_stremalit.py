@@ -45,7 +45,7 @@ def prepare_data(db_path, prediction_date_input=None):
 
     df_weather = pd.read_sql(f"SELECT * FROM weather WHERE date<='{end_to_train_data}'", conn)
     df_daily = pd.read_sql(f"SELECT * FROM daily_weather WHERE date<='{end_to_train_data}'", conn)
-    print(f"SELECT * FROM weather WHERE date<='{end_to_train_data}'")
+    print(f"SELECT * FROM weather WHERE date<='{end_to_train_data}' ")
     # Pobieramy dane pogodowe dla daty predykcji i 4 poprzednich dni
 
     # Sprawdzenie NaN

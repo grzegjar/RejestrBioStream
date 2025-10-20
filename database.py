@@ -22,7 +22,7 @@ def init_db():
             stres INTEGER,
             HgL INTEGER,
             HgH INTEGER,
-            miejscowosc TEXT,
+            miejscowosc TEXT, 
             bol INTEGER,
             samopoczucie INTEGER,
             slodycze INTEGER, 
@@ -80,7 +80,7 @@ def init_db():
         ''')
     try:
         cursor.execute("ALTER TABLE weather ADD COLUMN poziom_bolu INTEGER;")
-        print("ALTER TABLE weather ADD COLUMN poziom_bolu INTEGER")
+        print("ALTER TABLE weather ADD COLUMN poziom_bolu INTEGER ")
     except sqlite3.OperationalError:
         pass  # Kolumna już istnieje
 

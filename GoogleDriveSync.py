@@ -64,7 +64,7 @@ class DriveAutoSync:
                     if 'drive' in scopes or 'https://www.googleapis.com/auth/drive' in scopes:
                         print("✅ Token ma uprawnienia do Google Drive")
                     else:
-                        print("❌ Token NIE ma uprawnień do Google Drive")
+                        print("❌ Token NIE ma uprawnień do Google Drive ")
 
             except Exception as e:
                 print(f"ℹ️ Nie można zdekodować tokenu: {e}")
