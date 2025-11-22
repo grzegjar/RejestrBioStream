@@ -12,4 +12,3 @@ imbalanced-learn
 matplotlib
 requests
 python-dotenv
-ephem
