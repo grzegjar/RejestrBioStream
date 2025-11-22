@@ -89,10 +89,8 @@ if st.button("Zapisz dane"):
         "stres": stres,
         "dieta1": diet_values1,
         "dieta2": diet_values2,
-        "bol": bol,
         "godzina_bolu": godzina_bolu,
         "samopoczucie": samopoczucie,
-        "uwagi": uwagi
     }
 
     st.success("Dane zostały zapisane!")
