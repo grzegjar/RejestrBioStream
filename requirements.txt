@@ -1,4 +1,4 @@
-streamlit
+hemstreamlit
 pandas
 numpy
 scikit-learn
@@ -12,3 +12,4 @@ imbalanced-learn
 matplotlib
 requests
 python-dotenv
+ephem
