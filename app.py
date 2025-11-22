@@ -6,7 +6,6 @@ import requests
 import time
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
-import ephem
 import joblib
 
 import matplotlib.pyplot as plt
@@ -141,7 +140,16 @@ COLUMNS = [
     "weather_id", "weather_main", "weather_description", "weather_icon",
     "czy_bol", "poziom_bolu", "illum"
 ]
-
+def moon_phase(year, month, day):
+    # prosta metoda Conwaya
+    r = year % 100
+    r %= 19
+    r = ((r * 11) % 30) + month + day
+    if month < 3:
+        r += 2
+    r -= (0 if year < 2000 else 4)
+    r = r % 30
+    return r  # 0=new, 15=full
 # ---------------------------------
 # Funkcja zapisująca godzinę do DataFrame
 # ---------------------------------
@@ -149,10 +157,12 @@ def save_hourly_weather(date_str, hour, lat, lon, ow_hour):
     weather = ow_hour.get("weather", [])
     weather0 = weather[0] if weather else {}
 
-    # Tworzymy datetime w formacie ISO dla ephem
-    dt_iso = f"{date_str} {hour}:00:00"
-    m = ephem.Moon(dt_iso)
-    illum = round(m.phase)  # faza księżyca w %
+    year, month, day = map(int, date_str.split("-"))
+    illum = moon_phase(year, month, day)
+    print("Faza księżyca:", illum)
+    illum = moon_phase(year, month, day)
+    # print("Faza księżyca:", illum)
+    # illum = round(m.phase)  # faza księżyca w %
 
     row = {
         "date": date_str,
